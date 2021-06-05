@@ -2,19 +2,19 @@ pragma solidity ^0.4.2;
 
 contract Bank{
     mapping(address=>uint) balances;
-    string owneremail; 
-    struct Owner{
+    //string owneremail; 
+    /*struct Owner{
         address addr;
         string owneremail;
         mapping(address=>mapping(uint=>Beneficiary)) beneficiarylist;
-    }
-    struct Beneficiary{
+    }*/
+    /*struct Beneficiary{
         string beneficiaryemail;
         uint portion;
         bool execute;
-    }
-    mapping(uint=>Beneficiary) beneficiaryinfo;
-    uint[] public beneficiaryids;
+    }*/
+    //mapping(uint=>Beneficiary) beneficiaryinfo;
+    //uint[] public beneficiaryids;
     
     //存錢進合約
     function deposit() public payable{
@@ -31,10 +31,29 @@ contract Bank{
     function getBankBalance() public view returns(uint){
         return this.balance;
     }
+}
 //contract testamentaryset{
 
 //}
-
+contract settestamentary{
+    //mapping(address=>uint) balances;
+    string owneremail; 
+    /*struct Owner{
+        address addr;
+        string owneremail;
+        mapping(address=>mapping(uint=>Beneficiary)) beneficiarylist;
+    }*/
+    struct Beneficiary{
+        string beneficiaryemail;
+        uint portion;
+        bool execute;
+    }
+    mapping(uint=>Beneficiary) beneficiaryinfo;
+    uint[] public beneficiaryids;
+    //Bank bank;
+    /*function settestamentary(address _contractadd) public{
+        bank=Bank(_contractadd);
+    }*/
     //簽立遺囑人信箱
     function submitEmail(string memory _email) public {
        owneremail = _email;
@@ -56,6 +75,27 @@ contract Bank{
         return (s.beneficiaryemail,s.portion,s.execute);
     }
     
+}
+
+contract setpassword{
+     settestamentary testamentary;
+     uint password;
+     uint hashdigits=8;
+     uint hashmoduls=10**hashdigits;
+     mapping(address=>uint) beneficiarypass;
+     function setpassword(address _contractadd) public{
+        testamentary=settestamentary(_contractadd);
+    }
+     function passwordset(string memory _password) public{
+         //password=uint((keccak256(abi.encodePacked(_password)))%hashmoduls);
+         password=uint((keccak256(_password)));
+         //password=_password;
+         beneficiarypass[msg.sender]=password;
+     }
+     function getpassword() public view returns(uint){
+         return beneficiarypass[msg.sender];
+     }
+}    
     /*function execution(string memory _email)public{
         Beneficiary storage s = beneficiaryinfo[id];
         require(s.execute=false);
@@ -97,4 +137,4 @@ contract Bank{
         }
         str = string(s);
     }*/
-}
+//}
