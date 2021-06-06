@@ -49,11 +49,14 @@ contract settestamentary{
         bool execute;
     }
     mapping(uint=>Beneficiary) beneficiaryinfo;
-    uint[] public beneficiaryids;
+    uint[]  beneficiaryids;
+    mapping(string=>Beneficiary) beneficiaryinfo2;
+    string[] beneficiarymails;
     //Bank bank;
     /*function settestamentary(address _contractadd) public{
         bank=Bank(_contractadd);
     }*/
+
     //簽立遺囑人信箱
     function submitEmail(string memory _email) public {
        owneremail = _email;
@@ -64,17 +67,39 @@ contract settestamentary{
     //添加入受益人
     function addbene(uint id,string memory _benemail,uint _distriburate) public{
        Beneficiary storage newbene= beneficiaryinfo[id];
+       //Beneficiary storage newbenee=beneficiaryinfo2[_benemail];
        newbene.beneficiaryemail = _benemail;
        newbene.portion=_distriburate;
        newbene.execute=false;
        beneficiaryids.push(id);
+       beneficiarymails.push(_benemail);
+       //benes.push(newbene);
     }
+    function returnlen()public view returns(uint){
+        return beneficiarymails.length;
+    }
+    
     //查看受益人資訊
     function getBeneficiary(uint id) public view returns (string memory,uint,bool){
         Beneficiary storage s = beneficiaryinfo[id];
         return (s.beneficiaryemail,s.portion,s.execute);
     }
-    
+    function getbeneficiarybymail(string memory _mail) public view returns(bool){
+        uint i;
+        bool ha;
+        for(i=0;i<beneficiarymails.length;i++){
+            if(keccak256(_mail)==keccak256(beneficiarymails[i])){
+                ha=true;
+            }else {ha=false;}
+        }
+        return ha;
+    }
+    //修改受益人分配比例
+    function modifybene(uint _id,uint _portion)public{
+        Beneficiary storage  s =beneficiaryinfo[_id];
+        s.portion=_portion;
+        
+    }
 }
 
 contract setpassword{
@@ -86,6 +111,13 @@ contract setpassword{
      function setpassword(address _contractadd) public{
         testamentary=settestamentary(_contractadd);
     }
+     function checkvalid(string memory _emaill)public view returns(string) {
+        string memory i;
+        if(testamentary.getbeneficiarybymail(_emaill)==true){
+        i="valid";}
+        else{i="invalid";}
+        return i;
+     }
      function passwordset(string memory _password) public{
          //password=uint((keccak256(abi.encodePacked(_password)))%hashmoduls);
          password=uint((keccak256(_password)));
