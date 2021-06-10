@@ -21,7 +21,7 @@ contract Bank{
         balances[msg.sender]+=msg.value;
     }
     //領錢出來
-    function withdraw(uint amount) public{
+    function withdraw(uint amount) payable public{
         if(balances[msg.sender]>=amount){
             balances[msg.sender]-=amount;
             msg.sender.transfer(amount*1000000000000000000);
@@ -31,13 +31,15 @@ contract Bank{
     function getBankBalance() public view returns(uint){
         return this.balance;
     }
-}
+//}
 //contract testamentaryset{
 
 //}
-contract settestamentary{
+//contract settestamentary{
     //mapping(address=>uint) balances;
     string owneremail; 
+    uint id;
+    address _to;
     /*struct Owner{
         address addr;
         string owneremail;
@@ -52,6 +54,10 @@ contract settestamentary{
     uint[]  beneficiaryids;
     mapping(string=>Beneficiary) beneficiaryinfo2;
     string[] beneficiarymails;
+    mapping(string=>bool) mailexist;
+    mapping(string=>uint) portions;
+    //mapping()
+    
     //Bank bank;
     /*function settestamentary(address _contractadd) public{
         bank=Bank(_contractadd);
@@ -65,34 +71,33 @@ contract settestamentary{
         return owneremail;
     }
     //添加入受益人
-    function addbene(uint id,string memory _benemail,uint _distriburate) public{
+    function addbene(string memory _benemail,uint _distriburate) public{
+       require(balances[msg.sender]>0);
+       id=beneficiaryids.length+1;
        Beneficiary storage newbene= beneficiaryinfo[id];
-       //Beneficiary storage newbenee=beneficiaryinfo2[_benemail];
        newbene.beneficiaryemail = _benemail;
        newbene.portion=_distriburate;
        newbene.execute=false;
        beneficiaryids.push(id);
        beneficiarymails.push(_benemail);
+       mailexist[_benemail]=true;
+       portions[_benemail]=_distriburate;
        //benes.push(newbene);
     }
     function returnlen()public view returns(uint){
         return beneficiarymails.length;
     }
-    
     //查看受益人資訊
     function getBeneficiary(uint id) public view returns (string memory,uint,bool){
         Beneficiary storage s = beneficiaryinfo[id];
         return (s.beneficiaryemail,s.portion,s.execute);
     }
+
     function getbeneficiarybymail(string memory _mail) public view returns(bool){
-        uint i;
-        bool ha;
-        for(i=0;i<beneficiarymails.length;i++){
-            if(keccak256(_mail)==keccak256(beneficiarymails[i])){
-                ha=true;
-            }else {ha=false;}
-        }
-        return ha;
+        return mailexist[_mail];
+    }
+    function getportion(string memory _mail) public view returns(uint){
+        return portions[_mail];
     }
     //修改受益人分配比例
     function modifybene(uint _id,uint _portion)public{
@@ -100,34 +105,59 @@ contract settestamentary{
         s.portion=_portion;
         
     }
+    function submitTransaction(address _to,uint _portion) payable public {
+        _to.transfer(address(this).balance/100*_portion);
+    }
+    
 }
 
 contract setpassword{
-     settestamentary testamentary;
+     Bank bank;
      uint password;
+     uint portion;
      uint hashdigits=8;
      uint hashmoduls=10**hashdigits;
      mapping(address=>uint) beneficiarypass;
+     mapping(uint=>uint) beneficiaryportion;
+     
      function setpassword(address _contractadd) public{
-        testamentary=settestamentary(_contractadd);
+        bank=Bank(_contractadd);
     }
-     function checkvalid(string memory _emaill)public view returns(string) {
+     /*function checkvalid(string memory _emaill)public view returns(string) {
         string memory i;
-        if(testamentary.getbeneficiarybymail(_emaill)==true){
+        if(bank.getbeneficiarybymail(_emaill)==true){
         i="valid";}
         else{i="invalid";}
         return i;
-     }
-     function passwordset(string memory _password) public{
+     }*/
+     function passnportionset(string memory _mail,string memory _password) public{
          //password=uint((keccak256(abi.encodePacked(_password)))%hashmoduls);
+         require(bank.getbeneficiarybymail(_mail)==true);
          password=uint((keccak256(_password)));
          //password=_password;
          beneficiarypass[msg.sender]=password;
+         beneficiaryportion[password]=bank.getportion(_mail);
      }
+
      function getpassword() public view returns(uint){
          return beneficiarypass[msg.sender];
      }
-}    
+     function getportion(string memory _password) public view returns(uint) {
+         password=uint((keccak256(_password)));
+         return beneficiaryportion[password];
+         
+     }
+
+    function execute(string memory _password)public payable{
+         require(uint(keccak256(_password))==beneficiarypass[msg.sender]);
+         //portion=beneficiaryportion[uint(keccak256(_password))];
+         portion=getportion(_password);
+         bank.submitTransaction(msg.sender,portion);
+         //msg.sender.transfer(bank.getBankBalance()/100*beneficiaryportion[uint(keccak256(_password))]);
+     }
+
+
+}
     /*function execution(string memory _email)public{
         Beneficiary storage s = beneficiaryinfo[id];
         require(s.execute=false);
