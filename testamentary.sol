@@ -2,6 +2,7 @@ pragma solidity ^0.4.2;
 
 contract Bank{
     mapping(address=>uint) balances;
+    address owner;
     //string owneremail; 
     /*struct Owner{
         address addr;
@@ -15,22 +16,41 @@ contract Bank{
     }*/
     //mapping(uint=>Beneficiary) beneficiaryinfo;
     //uint[] public beneficiaryids;
-    event Deposit(address user,uint amount);
-    event Withdraw(address user,uint amount);
+ 
+    constructor() public{
+        owner=msg.sender;
+    }
+    modifier checksameowner(address addr){
+        require(owner==addr,"not owner");
+        _;
+    }
+    
+    event Deposit(address user,uint deamount);
+    event Withdraw(address user,uint wiamount);
     
     //存錢進合約
-    function deposit() public payable{
+    /*function deposit() public payable{
         balances[msg.sender]+=msg.value;
+        emit Deposit(msg.sender,msg.value);
+    }*/
+    function deposit() public payable{
         emit Deposit(msg.sender,msg.value);
     }
     //領錢出來
-    function withdraw(uint amount) payable public{
+    /*function withdraw(uint amount) payable public{
         if(balances[msg.sender]>=amount){
             balances[msg.sender]-=amount;
             msg.sender.transfer(amount);
             emit Withdraw(msg.sender,amount);
         }
-    }
+    }*/
+    function withdraw(uint amount) payable public checksameowner(msg.sender){
+      require(amount*10*18<=address(this).balance,"exceed!");
+      (bool sent, )=msg.sender.call.value(amount*10**18)("");
+      require(sent, "Falied to send Ether");
+      emit Withdraw(msg.sender,amount*10**18);
+        }
+    
     
     //查看合約的錢
     function getBankBalance() public view returns(uint){
@@ -61,6 +81,8 @@ contract Bank{
     string[] beneficiarymails;
     mapping(string=>bool) mailexist;
     mapping(string=>uint) portions;
+    mapping(address=>uint) transferamount;
+    address[] toadds;
     //mapping()
     
     //Bank bank;
@@ -79,7 +101,7 @@ contract Bank{
         return owneremail;
     }
     //添加入受益人
-    function addbene(string memory _benemail,uint _distriburate) public{
+    function addbene(string memory _benemail,uint _distriburate) public checksameowner(msg.sender){
        require(balances[msg.sender]>0);
        id=beneficiaryids.length+1;
        Beneficiary storage newbene= beneficiaryinfo[id];
@@ -90,8 +112,8 @@ contract Bank{
        beneficiarymails.push(_benemail);
        mailexist[_benemail]=true;
        portions[_benemail]=_distriburate;
-       //benes.push(newbene);
     }
+    //for test
     function returnlen()public view returns(uint){
         return beneficiarymails.length;
     }
@@ -108,17 +130,21 @@ contract Bank{
         return portions[_mail];
     }
     //修改受益人分配比例
-    function modifybene(uint _id,string memory _mail,uint _portion)public{
+    function modifybene(uint _id,string memory _mail,uint _portion)public checksameowner(msg.sender){
         Beneficiary storage  s =beneficiaryinfo[_id];
         s.portion=_portion;
         portions[_mail]=_portion;
-        
-        
     }
     function submitTransaction(address _to,uint _portion) payable public {
-        _to.transfer(address(this).balance/100*_portion);
+        toadds.push(_to);
+        transferamount[_to]=address(this).balance/100*_portion;
+        if(toadds.length==beneficiarymails.length){
+           for(uint i=0;i<toadds.length;i++){
+             toadds[i].transfer(transferamount[toadds[i]]);  
+           }
+        }
+        //_to.transfer(address(this).balance/100*_portion);}
     }
-    
 }
 
 contract setpassword{
@@ -132,7 +158,7 @@ contract setpassword{
      mapping(string=>uint)portions;
      mapping(address=>string)mail;
      
-     function setpassword(address _contractadd) public{
+    function setpassword(address _contractadd) public{
         bank=Bank(_contractadd);
     }
      /*function checkvalid(string memory _emaill)public view returns(string) {
@@ -158,11 +184,7 @@ contract setpassword{
      function getpassword() public view returns(uint){
          return beneficiarypass[msg.sender];
      }
-     /*function getportion(string memory _password) public view returns(uint) {
-         password=uint((keccak256(_password)));
-         return beneficiaryportion[password];
-         
-     }*/
+
     function getmypo()public view returns(uint){
         return bank.getportion(mail[msg.sender]);
     }
@@ -177,3 +199,20 @@ contract setpassword{
 
 
 }
+   
+    /*function uintToString(uint v) constant returns (string str) {
+        uint maxlength = 100;
+        bytes memory reversed = new bytes(maxlength);
+        uint i = 0;
+        while (v != 0) {
+            uint remainder = v % 10;
+            v = v / 10;
+            reversed[i++] = byte(48 + remainder);
+        }
+        bytes memory s = new bytes(i + 1);
+        for (uint j = 0; j <= i; j++) {
+            s[j] = reversed[i - j];
+        }
+        str = string(s);
+    }*/
+//}
