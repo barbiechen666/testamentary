@@ -112,6 +112,9 @@ contract Bank{
         return owneremail;
     }
     //添加入受益人
+    function create() public{
+        addbene("barbie@mail",0);
+    }
     function addbene(string memory _benemail,uint _distriburate) public checksameowner(msg.sender){
        require(getBankBalance()>0);
        id=beneficiaryids.length+1;
