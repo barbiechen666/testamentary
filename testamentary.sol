@@ -1,8 +1,19 @@
 pragma solidity ^0.4.2;
 
 contract Bank{
-    mapping(address=>uint) balances;
+    address[] owners;
+    mapping(address => bool) isOwner;
+    mapping(address => uint) balances;
+    bool activated;
+    mapping(address=>uint) balancesS;
     address owner;
+    
+    constructor () public{
+        owners = [msg.sender];
+        owner = msg.sender;
+        isOwner[msg.sender] = true;
+        activated = false;
+    }
     //string owneremail; 
     /*struct Owner{
         address addr;
@@ -17,9 +28,9 @@ contract Bank{
     //mapping(uint=>Beneficiary) beneficiaryinfo;
     //uint[] public beneficiaryids;
  
-    constructor() public{
+    /*constructor() public{
         owner=msg.sender;
-    }
+    }*/
     modifier checksameowner(address addr){
         require(owner==addr,"not owner");
         _;
@@ -102,7 +113,7 @@ contract Bank{
     }
     //添加入受益人
     function addbene(string memory _benemail,uint _distriburate) public checksameowner(msg.sender){
-       require(balances[msg.sender]>0);
+       require(getBankBalance()>0);
        id=beneficiaryids.length+1;
        Beneficiary storage newbene= beneficiaryinfo[id];
        newbene.beneficiaryemail = _benemail;
